@@ -1,0 +1,128 @@
+---
+title: "Motor Trend Analysis"
+author: "Srividya Bobji"
+date: "Sunday, February 22, 2015"
+output: pdf_document
+---
+
+
+## Introduction
+Planning to buy a new car and you are undecided between automatic and manual transmission?  Read the report below.  We will look at how MPG affects between automatic and manual transmission and if its a myth.
+Looking at a data set of a collection of cars, we are interested in exploring the relationship between a set of variables and miles per gallon (MPG) (outcome). 
+* "Is an automatic or manual transmission better for MPG"
+* "Quantify the MPG difference between automatic and manual transmissions" 
+
+## Data
+We have obtained the data from 1974 Motor Trend US magazine, and comprises fuel consumption and 10 aspects of automobile design and performance for 32 automobiles (1973-74 models). 
+
+We load the data as such.
+```{r}
+library(datasets)
+data(mtcars)
+```
+
+Converting variables to factor variables.
+```{r}
+# Converting to factors
+mtcars$cyl <- factor(mtcars$cyl)
+mtcars$vs <- factor(mtcars$vs)
+mtcars$am <- factor(mtcars$am, labels = c("Automatic", "Manual"))
+mtcars$gear <- factor(mtcars$gear)
+mtcars$carb <- factor(mtcars$carb)
+```
+
+
+## Analysis
+A boxplot was produced to show the difference between automatic and manual in terms of MPG. In figure 1, it is clear that manual transmission produces more MPG. Next, a pairwise graph (figure 2) was created in order to get a greater intuition of what other variables may be of interest. There is a linear relationship between MPG and each of cyl, disp, hp, drat, wt, qsec, vs, am. The covariance was also computed (figure 3) between every variable and the positive values were noted (qsec = 0.419, vs = 0.664, am = 0.600, gear = 0.480). Then a linear model was fit on all the variables to determine which variables should be used in the final models. In figure 4 the summary from this model is shown. The lowest p values were taken (i.e. wt = 0.063, am = 0.234, qsec = 0.274) due to their high significance in predicting MPG.
+
+```{r, echo = FALSE}
+# model using all data as predictors
+modelFitAll = lm(mpg ~ ., data = mtcars)
+```
+## Model
+From the initial model, covariance test and visually inspecting the pairwise graph the following variables stood out in particular: qsec, vs, am, wt and gear. Next a stepwise model process was used in order to obtain the most significant predictors to be used. As shown in figure 5, the most significant predictors in determining the MPG are cyl, hp, wt and am. The summary for this model is also shown.  Next, the new model was compared with a basic model that only uses transmission type as its predictor. A p-value of 1.688e-08 was obtained (figure 6). This value is negligible indicating that the predictors are good for the  model's accuracy. 
+
+```{r}
+# step wise selection process
+modelStep <- step(modelFitAll, trace = 0)
+```
+
+```{r, echo = FALSE}
+# compare basic model to selection model
+modelFitMileage <- lm(mpg ~ am, data = mtcars)
+compare <- anova(modelFitMileage, modelStep)
+```
+
+## Diagnostics
+The residuals from the final model are plotted below (figure 8).
+
+- The Residuals vs Fitted plot shows no pattern between the residuals and fitted values indicating that this regression model is well fit.  
+- The QQ plot shows that the points line up as expected meaning that the distribtion is normal and our model predictions are accurate.  
+- In both the Scale-Location plot and the Residuals vs Leverage plots, the points are in a group with none too far from the center indicating no point had too much leverage.
+
+## Statistical Inference
+A Two Sample t-test was conducted between the different transmission types. The null hypothesis that transmission types don't have an effect on the MPG is discarded for a p-value greater than 0.05. The results are shown in figure 8. The p-value of 0.001374 and difference in  means show that manual transmission has significantly more MPG than automatic.
+```{r}
+test <- t.test(mpg ~ am, data = mtcars)
+```
+
+
+## Conclusions
+The transmission type of a car has a significant effect on its fuel efficiency. According to the model, manual transmission, on average, has 1.81 MPG more than automatics. According to the boxplot, manual transmission has ~ 6 MPG more than automatics.
+
+------
+## Appendix
+
+#####Figure 1.
+  
+```{r, fig.cap = "Figure 1", fig.width = 5, fig.height = 4}
+
+boxplot(mpg ~ am, data = mtcars,
+        xlab = "Transmission", ylab = "MPG",
+        main = "MPG vs Transmission", col = c("red", "green"), 
+        names = c("Automatic", "Manual"))
+```
+
+#####Figure 2.
+  
+```{r, fig.cap = "Figure 2", fig.width = 8}
+p1 = pairs(mtcars, panel = panel.smooth, main = "Pairwise plot of mtcars data")
+```
+
+#####Figure 3.
+  
+```{r, efig.cap = "Figure 3"}
+head(cov2cor(cov(sapply(mtcars, as.numeric))), 1)
+```
+#####Figure 4.
+  
+```{r, fig.cap = "Figure 4"}
+modelFitAll$coeff
+```
+
+#####Figure 5.
+  
+```{r, fig.cap = "Figure 5"}
+summary(modelStep)$coef
+modelStep$coeff
+```
+
+#####Figure 6.
+  
+```{r, fig.cap = "Figure 6"}
+compare <- anova(modelFitMileage, modelStep)
+compare$Pr
+```
+
+#####Figure 7.
+  
+```{r, fig.cap="Figure 7"}
+modelFitMileage
+```
+
+#####Figure 8.
+  
+```{r, fig.cap = "Figure 8"}
+par(mfrow=c(2, 2))
+plot(modelStep)
+```
